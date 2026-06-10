@@ -8,6 +8,10 @@ describe('QA Authentication Triangle Tests (TypeScript)', () => {
   let app: INestApplication<App>;
 
   beforeAll(async () => {
+    // Set throttler parameters to high values to bypass rate limiting in QA tests
+    process.env.THROTTLER_TTL = '60';
+    process.env.THROTTLER_LIMIT = '1000';
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -19,6 +23,8 @@ describe('QA Authentication Triangle Tests (TypeScript)', () => {
 
   afterAll(async () => {
     await app.close();
+    delete process.env.THROTTLER_TTL;
+    delete process.env.THROTTLER_LIMIT;
   });
 
   const uniqueEmail = `qa-triangle-${Date.now()}@example.com`;

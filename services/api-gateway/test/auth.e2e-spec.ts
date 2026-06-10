@@ -8,6 +8,10 @@ describe('AuthModule (e2e)', () => {
   let app: INestApplication<App>;
 
   beforeEach(async () => {
+    // Set throttler parameters to high values to bypass rate limiting in auth e2e tests
+    process.env.THROTTLER_TTL = '60';
+    process.env.THROTTLER_LIMIT = '1000';
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -19,6 +23,8 @@ describe('AuthModule (e2e)', () => {
 
   afterEach(async () => {
     await app.close();
+    delete process.env.THROTTLER_TTL;
+    delete process.env.THROTTLER_LIMIT;
   });
 
   const uniqueEmail = `test-${Date.now()}@example.com`;

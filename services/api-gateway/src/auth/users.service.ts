@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { User } from './interfaces/user.interface';
 import * as bcrypt from 'bcrypt';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class UsersService {
@@ -26,7 +27,7 @@ export class UsersService {
     const passwordHash = await bcrypt.hash(passwordPlain, salt);
 
     const user: User = {
-      id: Math.random().toString(36).substring(2, 15),
+      id: randomUUID(),
       email,
       passwordHash,
     };
