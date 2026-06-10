@@ -33,6 +33,8 @@ describe('UsersService', () => {
     const password = 'password123';
 
     await service.create(email, password);
-    await expect(service.create(email, password)).rejects.toThrow(BadRequestException);
+    await expect(service.create(email, password)).rejects.toThrow(
+      BadRequestException,
+    );
   });
 });

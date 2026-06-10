@@ -51,9 +51,9 @@ describe('AuthService', () => {
     });
 
     it('should throw UnauthorizedException if user does not exist', async () => {
-      await expect(service.validateUser('nonexistent@example.com', 'password')).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(
+        service.validateUser('nonexistent@example.com', 'password'),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException if password does not match', async () => {
@@ -67,9 +67,9 @@ describe('AuthService', () => {
   });
 
   describe('login', () => {
-    it('should return access token', async () => {
+    it('should return access token', () => {
       const user = { id: 'userid', email: 'test@example.com' };
-      const response = await service.login(user);
+      const response = service.login(user);
       expect(response).toEqual({ access_token: 'mock-jwt-token' });
     });
   });

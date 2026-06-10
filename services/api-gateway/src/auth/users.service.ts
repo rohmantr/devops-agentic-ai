@@ -6,10 +6,12 @@ import * as bcrypt from 'bcrypt';
 export class UsersService {
   private readonly users: Map<string, User> = new Map();
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   async findByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.email === email);
+    return Array.from(this.users.values()).find((user) => user.email === email);
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   async findById(id: string): Promise<User | undefined> {
     return this.users.get(id);
   }

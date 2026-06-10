@@ -45,7 +45,7 @@ describe('AuthModule (e2e)', () => {
 
     it('should fail registration if email is already taken', async () => {
       const email = `taken-${Date.now()}@example.com`;
-      
+
       // Register once
       await request(app.getHttpServer())
         .post('/auth/signup')
@@ -76,8 +76,9 @@ describe('AuthModule (e2e)', () => {
         .send({ email: loginEmail, password })
         .expect(201);
 
-      expect(response.body).toHaveProperty('access_token');
-      expect(typeof response.body.access_token).toBe('string');
+      const body = response.body as { access_token: string };
+      expect(body).toHaveProperty('access_token');
+      expect(typeof body.access_token).toBe('string');
     });
 
     it('should reject invalid credentials', async () => {
@@ -103,7 +104,8 @@ describe('AuthModule (e2e)', () => {
         .send({ email: profileEmail, password })
         .expect(201);
 
-      accessToken = loginRes.body.access_token;
+      const body = loginRes.body as { access_token: string };
+      accessToken = body.access_token;
     });
 
     it('should allow access to a protected route with a valid JWT token', async () => {
@@ -117,9 +119,7 @@ describe('AuthModule (e2e)', () => {
     });
 
     it('should deny access without a token', async () => {
-      await request(app.getHttpServer())
-        .get('/auth/profile')
-        .expect(401);
+      await request(app.getHttpServer()).get('/auth/profile').expect(401);
     });
 
     it('should deny access with an invalid token', async () => {

@@ -11,13 +11,19 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async register(email: string, passwordPlain: string): Promise<Omit<User, 'passwordHash'>> {
+  async register(
+    email: string,
+    passwordPlain: string,
+  ): Promise<Omit<User, 'passwordHash'>> {
     const user = await this.usersService.create(email, passwordPlain);
-    const { passwordHash, ...result } = user;
-    return result;
+    const { id, email: userEmail } = user;
+    return { id, email: userEmail };
   }
 
-  async validateUser(email: string, passwordPlain: string): Promise<Omit<User, 'passwordHash'>> {
+  async validateUser(
+    email: string,
+    passwordPlain: string,
+  ): Promise<Omit<User, 'passwordHash'>> {
     const user = await this.usersService.findByEmail(email);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
@@ -28,11 +34,11 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const { passwordHash, ...result } = user;
-    return result;
+    const { id, email: userEmail } = user;
+    return { id, email: userEmail };
   }
 
-  async login(user: Omit<User, 'passwordHash'>) {
+  login(user: Omit<User, 'passwordHash'>) {
     const payload = { email: user.email, sub: user.id };
     return {
       access_token: this.jwtService.sign(payload),
