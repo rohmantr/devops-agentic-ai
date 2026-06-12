@@ -1,16 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
+import * as request_ from 'supertest';
 import { AppModule } from './../src/app.module';
 
 jest.mock('ioredis', () => require('ioredis-mock'));
 
-const req =
-  (request as unknown as { default: typeof request }).default || request;
+const request = (request_ as any).default || request_;
+
+const req = request;
 
 describe('ThrottlerGuard (e2e)', () => {
-  let app: INestApplication<App>;
+  let app: INestApplication<any>;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -21,7 +21,9 @@ describe('ThrottlerGuard (e2e)', () => {
 
     // Type-safe access to underlying Express instance
     const httpAdapter = app.getHttpAdapter();
-    const instance = httpAdapter.getInstance() as ExpressApp;
+
+    const instance = httpAdapter.getInstance();
+
     instance.set('trust proxy', 1);
 
     await app.init();
@@ -55,7 +57,6 @@ describe('ThrottlerGuard (e2e)', () => {
     const res = await req(app.getHttpServer()).get('/');
     expect(res.status).toBe(429);
     expect(res.body).toMatchObject({
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       message: expect.stringContaining('Rate limit exceeded'),
       statusCode: 429,
     });
