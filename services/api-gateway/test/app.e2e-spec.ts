@@ -3,10 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import * as request_ from 'supertest';
 import { AppModule } from './../src/app.module';
 
-jest.mock('ioredis', () => require('ioredis-mock'));
-
 const request = (request_ as any).default || request_;
-
 const req = request;
 
 describe('AppController (e2e)', () => {
