@@ -1,0 +1,49 @@
+openapi: 3.0.0
+paths:
+  /:
+    get:
+      operationId: AppController_getHello
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags:
+        - App
+  /auth/login:
+    post:
+      operationId: AuthController_login
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginDto"
+      responses:
+        "201":
+          description: ""
+      tags:
+        - Auth
+info:
+  title: DevOps Agentic AI API
+  description: API documentation for DevOps Agentic AI System
+  version: 1.0.0
+  contact: {}
+tags:
+  - name: agents
+    description: AI Agent lifecycle management
+  - name: pipelines
+    description: CI/CD pipeline operations
+  - name: infrastructure
+    description: Infrastructure provisioning
+servers: []
+components:
+  securitySchemes:
+    bearer:
+      scheme: bearer
+      bearerFormat: JWT
+      type: http
+  schemas:
+    LoginDto:
+      type: object
+      properties: {}

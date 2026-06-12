@@ -30,7 +30,7 @@ describe('JwtStrategy', () => {
 
     it('should handle payload without email', () => {
       const payload = { sub: 'user_456' };
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
       const result = strategy.validate(payload as any) as Record<
         string,
         unknown
@@ -41,7 +41,7 @@ describe('JwtStrategy', () => {
 
     it('should handle payload without sub', () => {
       const payload = { email: 'test@example.com' };
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
       const result = strategy.validate(payload as any) as Record<
         string,
         unknown
@@ -52,7 +52,7 @@ describe('JwtStrategy', () => {
 
     it('should handle empty payload', () => {
       const payload = {};
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
       const result = strategy.validate(payload as any) as Record<
         string,
         unknown
