@@ -17,7 +17,11 @@ export class UsersService {
     return this.users.get(id);
   }
 
-  async create(email: string, passwordPlain: string): Promise<User> {
+  async create(
+    email: string,
+    passwordPlain: string,
+    tier: 'free' | 'pro' = 'free',
+  ): Promise<User> {
     const existing = await this.findByEmail(email);
     if (existing) {
       throw new BadRequestException('Email is already taken');
@@ -30,6 +34,7 @@ export class UsersService {
       id: randomUUID(),
       email,
       passwordHash,
+      tier,
     };
 
     this.users.set(user.id, user);

@@ -20,6 +20,7 @@ export class AuthController {
     return this.authService.register(
       createUserDto.email,
       createUserDto.password,
+      createUserDto.tier,
     );
   }
 
@@ -34,7 +35,12 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('profile')
-  getProfile(@Request() req: { user: { id: string; email: string } }) {
+  getProfile(
+    @Request()
+    req: {
+      user: { id: string; email: string; tier: 'free' | 'pro' };
+    },
+  ) {
     return req.user;
   }
 }

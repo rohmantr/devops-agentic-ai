@@ -11,4 +11,7 @@ coverage/
 .pulumi/
 .next/
 *.tsbuildinfo
+.pytest_cache/
+.venv/
+*.egg-info/
 

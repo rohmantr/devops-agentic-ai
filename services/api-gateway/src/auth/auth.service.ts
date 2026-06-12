@@ -14,10 +14,11 @@ export class AuthService {
   async register(
     email: string,
     passwordPlain: string,
+    tier?: 'free' | 'pro',
   ): Promise<Omit<User, 'passwordHash'>> {
-    const user = await this.usersService.create(email, passwordPlain);
-    const { id, email: userEmail } = user;
-    return { id, email: userEmail };
+    const user = await this.usersService.create(email, passwordPlain, tier);
+    const { id, email: userEmail, tier: userTier } = user;
+    return { id, email: userEmail, tier: userTier };
   }
 
   async validateUser(
@@ -34,12 +35,12 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const { id, email: userEmail } = user;
-    return { id, email: userEmail };
+    const { id, email: userEmail, tier: userTier } = user;
+    return { id, email: userEmail, tier: userTier };
   }
 
   login(user: Omit<User, 'passwordHash'>) {
-    const payload = { email: user.email, sub: user.id };
+    const payload = { email: user.email, sub: user.id, tier: user.tier };
     return {
       access_token: this.jwtService.sign(payload),
     };
