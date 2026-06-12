@@ -1,14 +1,24 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './jwt.strategy';
-import { ConfigModule } from '@nestjs/config';
 
 describe('JwtStrategy', () => {
   let strategy: JwtStrategy;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [ConfigModule.forRoot()],
-      providers: [JwtStrategy],
+      providers: [
+        JwtStrategy,
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn((key: string, defaultValue?: string) => {
+              if (key === 'JWT_SECRET') return 'test-secret-key';
+              return defaultValue;
+            }),
+          },
+        },
+      ],
     }).compile();
 
     strategy = module.get<JwtStrategy>(JwtStrategy);
@@ -19,46 +29,41 @@ describe('JwtStrategy', () => {
   });
 
   describe('validate', () => {
-    it('should return user object from valid payload', () => {
-      const payload = { sub: 'user_123', email: 'test@example.com' };
-      const result = strategy.validate(payload);
-      expect(result).toEqual({
-        userId: 'user_123',
+    it('should return user object from valid payload', async () => {
+      const payload = {
+        sub: 'user-123',
         email: 'test@example.com',
+        tier: 'pro' as const,
+      };
+      const result = await strategy.validate(payload);
+
+      expect(result).toEqual({
+        id: 'user-123',
+        email: 'test@example.com',
+        tier: 'pro',
       });
     });
 
-    it('should handle payload without email', () => {
-      const payload = { sub: 'user_456' };
+    it('should use default "free" tier when tier is not provided', async () => {
+      const payload = { sub: 'user-456', email: 'free@example.com' };
+      const result = await strategy.validate(payload);
 
-      const result = strategy.validate(payload as any) as Record<
-        string,
-        unknown
-      >;
-      expect(result.userId).toBe('user_456');
-      expect(result.email).toBeUndefined();
+      expect(result).toEqual({
+        id: 'user-456',
+        email: 'free@example.com',
+        tier: 'free',
+      });
     });
 
-    it('should handle payload without sub', () => {
-      const payload = { email: 'test@example.com' };
+    it('should handle undefined tier in payload', async () => {
+      const payload = {
+        sub: 'user-789',
+        email: 'test@example.com',
+        tier: undefined,
+      };
+      const result = await strategy.validate(payload);
 
-      const result = strategy.validate(payload as any) as Record<
-        string,
-        unknown
-      >;
-      expect(result.email).toBe('test@example.com');
-      expect(result.userId).toBeUndefined();
-    });
-
-    it('should handle empty payload', () => {
-      const payload = {};
-
-      const result = strategy.validate(payload as any) as Record<
-        string,
-        unknown
-      >;
-      expect(result.userId).toBeUndefined();
-      expect(result.email).toBeUndefined();
+      expect(result.tier).toBe('free');
     });
   });
 });

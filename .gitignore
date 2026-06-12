@@ -1,5 +1,7 @@
 node_modules/
 dist/
+dist-dev/
+dist-temp/
 __pycache__/
 *.pyc
 .env
@@ -8,3 +10,7 @@ __pycache__/
 coverage/
 .pulumi/
 .next/
+*.tsbuildinfo
+.pytest_cache/
+.venv/
+*.egg-info/

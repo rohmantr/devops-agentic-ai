@@ -1,17 +1,48 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { LoginDto } from './dto/login.dto';
+import { UsersService } from './users.service';
+import * as bcrypt from 'bcrypt';
+import { User } from './interfaces/user.interface';
 
 @Injectable()
 export class AuthService {
-  constructor(private jwtService: JwtService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly jwtService: JwtService,
+  ) {}
 
-  async login(dto: LoginDto): Promise<{ access_token: string }> {
-    // Note: Temporary hardcoded check until database is implemented
-    if (dto.email === 'test@example.com' && dto.password === 'Test1234!') {
-      const payload = { sub: 'user_123', email: dto.email };
-      return { access_token: await this.jwtService.signAsync(payload) };
+  async register(
+    email: string,
+    passwordPlain: string,
+    tier?: 'free' | 'pro',
+  ): Promise<Omit<User, 'passwordHash'>> {
+    const user = await this.usersService.create(email, passwordPlain, tier);
+    const { id, email: userEmail, tier: userTier } = user;
+    return { id, email: userEmail, tier: userTier };
+  }
+
+  async validateUser(
+    email: string,
+    passwordPlain: string,
+  ): Promise<Omit<User, 'passwordHash'>> {
+    const user = await this.usersService.findByEmail(email);
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
     }
-    throw new UnauthorizedException();
+
+    const isMatch = await bcrypt.compare(passwordPlain, user.passwordHash);
+    if (!isMatch) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const { id, email: userEmail, tier: userTier } = user;
+    return { id, email: userEmail, tier: userTier };
+  }
+
+  login(user: Omit<User, 'passwordHash'>) {
+    const payload = { email: user.email, sub: user.id, tier: user.tier };
+    return {
+      access_token: this.jwtService.sign(payload),
+    };
   }
 }
