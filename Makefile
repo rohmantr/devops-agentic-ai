@@ -8,6 +8,8 @@ build:
 
 test:
 	cd services/api-gateway; npm test
+	cd services/api-gateway; npm run test:e2e
+	cd services/api-gateway; npm run test:cov
 	cd services/agent-runtime; pytest
 	cd services/infra-orchestrator; go test ./...
 
