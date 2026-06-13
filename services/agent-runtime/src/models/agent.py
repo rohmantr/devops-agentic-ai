@@ -1,4 +1,3 @@
-
 import enum
 from datetime import datetime, timezone
 import uuid
@@ -24,7 +23,6 @@ class AgentStatus(str, enum.Enum):
 
 
 class Agent(Base):
-
     __tablename__ = "agents"
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
@@ -53,7 +51,6 @@ class Agent(Base):
 
 
 class AgentExecution(Base):
-
     __tablename__ = "agent_executions"
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
