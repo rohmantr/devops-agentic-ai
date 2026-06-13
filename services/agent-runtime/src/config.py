@@ -14,7 +14,9 @@ class Settings(BaseSettings):
     nats_url: str = "nats://localhost:4222"
 
     # PostgreSQL
-    database_url: str = "postgresql+asyncpg://devops_ai:localdev123@localhost:5432/devops_agentic"
+    database_url: str = (
+        "postgresql+asyncpg://devops_ai:localdev123@localhost:5432/devops_agentic"
+    )
 
     # Redis
     redis_url: str = "redis://localhost:6379/0"
@@ -23,11 +25,7 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     openai_model: str = "gpt-4o"
 
-    model_config = {
-        "env_prefix": "AGENT_",
-        "env_file": ".env",
-        "extra": "ignore"
-    }
+    model_config = {"env_prefix": "AGENT_", "env_file": ".env", "extra": "ignore"}
 
 
 settings = Settings()

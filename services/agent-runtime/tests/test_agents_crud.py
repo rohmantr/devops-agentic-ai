@@ -48,8 +48,10 @@ async def db_session():
 @pytest.fixture(scope="function", autouse=True)
 def override_db_dependency(db_session):
     """Override get_db with the test session."""
+
     async def _get_test_db():
         yield db_session
+
     app.dependency_overrides[get_db] = _get_test_db
     yield
     app.dependency_overrides.clear()
@@ -116,7 +118,10 @@ async def test_create_agent_header_mismatch(client):
     headers = {"X-Tenant-ID": tenant_b}
     response = await client.post("/api/v1/agents/", json=payload, headers=headers)
     assert response.status_code == 400
-    assert "tenant_id in request body must match X-Tenant-ID header" in response.json()["detail"]
+    assert (
+        "tenant_id in request body must match X-Tenant-ID header"
+        in response.json()["detail"]
+    )
 
 
 @pytest.mark.asyncio
@@ -147,7 +152,9 @@ async def test_list_agents_tenant_isolation(client):
         "status": "idle",
         "config": {},
     }
-    resp = await client.post("/api/v1/agents/", json=agent_a_payload, headers={"X-Tenant-ID": tenant_a})
+    resp = await client.post(
+        "/api/v1/agents/", json=agent_a_payload, headers={"X-Tenant-ID": tenant_a}
+    )
     assert resp.status_code == 201
 
     # Create agent for Tenant B
@@ -158,7 +165,9 @@ async def test_list_agents_tenant_isolation(client):
         "status": "running",
         "config": {},
     }
-    resp = await client.post("/api/v1/agents/", json=agent_b_payload, headers={"X-Tenant-ID": tenant_b})
+    resp = await client.post(
+        "/api/v1/agents/", json=agent_b_payload, headers={"X-Tenant-ID": tenant_b}
+    )
     assert resp.status_code == 201
 
     # List as Tenant A
@@ -191,16 +200,22 @@ async def test_get_agent_by_id_and_isolation(client):
         "status": "idle",
         "config": {},
     }
-    resp = await client.post("/api/v1/agents/", json=agent_payload, headers={"X-Tenant-ID": tenant_a})
+    resp = await client.post(
+        "/api/v1/agents/", json=agent_payload, headers={"X-Tenant-ID": tenant_a}
+    )
     agent_id = resp.json()["id"]
 
     # Retrieve agent as Tenant A (should succeed)
-    response_a = await client.get(f"/api/v1/agents/{agent_id}", headers={"X-Tenant-ID": tenant_a})
+    response_a = await client.get(
+        f"/api/v1/agents/{agent_id}", headers={"X-Tenant-ID": tenant_a}
+    )
     assert response_a.status_code == 200
     assert response_a.json()["id"] == agent_id
 
     # Retrieve agent as Tenant B (should return 404 for isolation)
-    response_b = await client.get(f"/api/v1/agents/{agent_id}", headers={"X-Tenant-ID": tenant_b})
+    response_b = await client.get(
+        f"/api/v1/agents/{agent_id}", headers={"X-Tenant-ID": tenant_b}
+    )
     assert response_b.status_code == 404
 
 
@@ -217,19 +232,25 @@ async def test_update_agent_and_isolation(client):
         "status": "idle",
         "config": {},
     }
-    resp = await client.post("/api/v1/agents/", json=agent_payload, headers={"X-Tenant-ID": tenant_a})
+    resp = await client.post(
+        "/api/v1/agents/", json=agent_payload, headers={"X-Tenant-ID": tenant_a}
+    )
     agent_id = resp.json()["id"]
 
     # Try updating as Tenant B (should return 404 for isolation)
     update_payload = {"name": "Updated Agent Name", "status": "running"}
     response_b = await client.patch(
-        f"/api/v1/agents/{agent_id}", json=update_payload, headers={"X-Tenant-ID": tenant_b}
+        f"/api/v1/agents/{agent_id}",
+        json=update_payload,
+        headers={"X-Tenant-ID": tenant_b},
     )
     assert response_b.status_code == 404
 
     # Update as Tenant A (should succeed)
     response_a = await client.patch(
-        f"/api/v1/agents/{agent_id}", json=update_payload, headers={"X-Tenant-ID": tenant_a}
+        f"/api/v1/agents/{agent_id}",
+        json=update_payload,
+        headers={"X-Tenant-ID": tenant_a},
     )
     assert response_a.status_code == 200
     updated_data = response_a.json()
@@ -250,17 +271,25 @@ async def test_delete_agent_and_isolation(client):
         "status": "idle",
         "config": {},
     }
-    resp = await client.post("/api/v1/agents/", json=agent_payload, headers={"X-Tenant-ID": tenant_a})
+    resp = await client.post(
+        "/api/v1/agents/", json=agent_payload, headers={"X-Tenant-ID": tenant_a}
+    )
     agent_id = resp.json()["id"]
 
     # Try deleting as Tenant B (should return 404 for isolation)
-    response_b = await client.delete(f"/api/v1/agents/{agent_id}", headers={"X-Tenant-ID": tenant_b})
+    response_b = await client.delete(
+        f"/api/v1/agents/{agent_id}", headers={"X-Tenant-ID": tenant_b}
+    )
     assert response_b.status_code == 404
 
     # Delete as Tenant A (should succeed)
-    response_a = await client.delete(f"/api/v1/agents/{agent_id}", headers={"X-Tenant-ID": tenant_a})
+    response_a = await client.delete(
+        f"/api/v1/agents/{agent_id}", headers={"X-Tenant-ID": tenant_a}
+    )
     assert response_a.status_code == 204
 
     # Verify deleted
-    response_verify = await client.get(f"/api/v1/agents/{agent_id}", headers={"X-Tenant-ID": tenant_a})
+    response_verify = await client.get(
+        f"/api/v1/agents/{agent_id}", headers={"X-Tenant-ID": tenant_a}
+    )
     assert response_verify.status_code == 404
