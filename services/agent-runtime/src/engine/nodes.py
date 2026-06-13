@@ -1,4 +1,3 @@
-"""LangGraph Graph Nodes implementation."""
 
 import os
 from typing import Dict, Any
@@ -10,15 +9,12 @@ from src.models.agent import AgentType
 
 
 def get_llm():
-    # Retrieve api_key if exists, otherwise fallback to mock key to allow graph setup without crashes
     api_key = os.environ.get("OPENAI_API_KEY", "mock-key")
-    return ChatOpenAI(model="gpt-4o", temperature=0, api_key=api_key)  # type: ignore
+    return ChatOpenAI(model="gpt-4o", temperature=0, api_key=api_key)
 
 
 async def plan_node(state: AgentState) -> Dict[str, Any]:
-    """Node plan: Memanggil LLM untuk merencanakan aksi selanjutnya."""
     agent_type_str = state.get("agent_type", "ci_cd")
-    # Convert to AgentType enum if string
     if isinstance(agent_type_str, str):
         agent_type = AgentType(agent_type_str)
     else:
@@ -27,7 +23,6 @@ async def plan_node(state: AgentState) -> Dict[str, Any]:
     tools = get_tools_for_agent(agent_type)
     llm = get_llm().bind_tools(tools)
 
-    # Konstruksi system prompt berdasarkan task
     system_prompt = (
         f"You are a DevOps Agent of type {agent_type.value}. Your task is: {state['task']}. "
         "Formulate a plan, run tools, or provide the final answer if complete."
@@ -35,7 +30,6 @@ async def plan_node(state: AgentState) -> Dict[str, Any]:
 
     messages = [SystemMessage(content=system_prompt)] + state["messages"]
 
-    # Panggil LLM
     response = await llm.ainvoke(messages)
 
     return {
@@ -47,10 +41,8 @@ async def plan_node(state: AgentState) -> Dict[str, Any]:
 
 
 async def review_node(state: AgentState) -> Dict[str, Any]:
-    """Node review: Menilai apakah tugas telah selesai atau perlu retry."""
     llm = get_llm()
 
-    # Prompt evaluasi
     evaluation_prompt = (
         f"Analyze the task: '{state['task']}' and the execution history.\n"
         "Determine if the task is successfully completed. Answer only APPROVED or RETRY."
@@ -59,10 +51,8 @@ async def review_node(state: AgentState) -> Dict[str, Any]:
     messages = state["messages"] + [HumanMessage(content=evaluation_prompt)]
     response = await llm.ainvoke(messages)
 
-    # Handle response content type
     content = response.content
     if isinstance(content, list):
-        # Convert list of content blocks to text if necessary
         text_content = ""
         for block in content:
             if isinstance(block, dict) and "text" in block:
@@ -73,13 +63,12 @@ async def review_node(state: AgentState) -> Dict[str, Any]:
     else:
         decision = str(content).strip().upper()
 
-    # Handle response which might contain reasoning or surrounding quotes
     if "APPROVED" in decision:
         decision = "APPROVED"
     elif "RETRY" in decision:
         decision = "RETRY"
     else:
-        decision = "RETRY"  # default to retry if unclear
+        decision = "RETRY"
 
     status = "reviewing"
     new_logs = state.get("execution_log", []) + [
@@ -99,7 +88,6 @@ async def review_node(state: AgentState) -> Dict[str, Any]:
 
 
 async def complete_node(state: AgentState) -> Dict[str, Any]:
-    """Node complete: Set status to completed."""
     return {
         "status": "completed",
         "current_node": "complete",
@@ -109,7 +97,6 @@ async def complete_node(state: AgentState) -> Dict[str, Any]:
 
 
 async def fail_node(state: AgentState) -> Dict[str, Any]:
-    """Node fail: Set status to failed."""
     return {
         "status": "failed",
         "current_node": "fail",

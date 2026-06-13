@@ -1,4 +1,3 @@
-"""LangGraph workflow definition."""
 
 from typing import Any
 from langgraph.graph import StateGraph, END
@@ -11,7 +10,6 @@ from src.models.agent import AgentType
 
 
 def should_continue(state: AgentState) -> str:
-    """Conditional edge from plan node."""
     messages = state.get("messages", [])
     if not messages:
         return "review"
@@ -22,7 +20,6 @@ def should_continue(state: AgentState) -> str:
 
 
 def review_decision(state: AgentState) -> str:
-    """Conditional edge from review node."""
     execution_log = state.get("execution_log", [])
     if not execution_log:
         return "fail"
@@ -40,13 +37,10 @@ def review_decision(state: AgentState) -> str:
 
 
 def build_agent_graph(agent_type: AgentType) -> Any:
-    """Build compiled LangGraph StateGraph."""
     workflow = StateGraph(AgentState)
 
-    # Register Nodes
     workflow.add_node("plan", plan_node)
 
-    # Initialize ToolNode with allowed tools for this agent type
     tools = get_tools_for_agent(agent_type)
     workflow.add_node("execute", ToolNode(tools))
 
@@ -54,15 +48,12 @@ def build_agent_graph(agent_type: AgentType) -> Any:
     workflow.add_node("complete", complete_node)
     workflow.add_node("fail", fail_node)
 
-    # Set Entry Point
     workflow.set_entry_point("plan")
 
-    # Set Edges
     workflow.add_conditional_edges(
         "plan", should_continue, {"execute": "execute", "review": "review"}
     )
 
-    # Tool output always returns to plan for determining next steps
     workflow.add_edge("execute", "plan")
 
     workflow.add_conditional_edges(

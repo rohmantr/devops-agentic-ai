@@ -1,4 +1,3 @@
-"""Factory for selecting agent tools based on AgentType."""
 
 from typing import List
 from langchain_core.tools import BaseTool
@@ -9,7 +8,6 @@ from src.models.agent import AgentType
 
 
 def get_tools_for_agent(agent_type: AgentType) -> List[BaseTool]:
-    """Mengembalikan daftar tool yang diperbolehkan berdasarkan tipe agen."""
     if agent_type == AgentType.CI_CD:
         return [git_tool, docker_tool, shell_tool]
     elif agent_type == AgentType.INFRA:

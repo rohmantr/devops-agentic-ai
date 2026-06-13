@@ -1,4 +1,3 @@
-"""Agent Pydantic schemas."""
 
 from datetime import datetime
 import uuid

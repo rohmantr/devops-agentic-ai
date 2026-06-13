@@ -1,18 +1,9 @@
-"""Base shell tool implementation."""
 
 from langchain_core.tools import tool
 
 
-@tool
+@tool(description="Execute shell commands on the system.")
 def shell_tool(command: str) -> str:
-    """Execute a local shell command.
-
-    Args:
-        command: The shell command to run.
-
-    Returns:
-        A string containing stdout, stderr, and exit_code.
-    """
     # A mock/real implementation that executes a command
     # For now, a mock wrapper or simple subprocess run can be used.
     # To keep it secure and simple for testing/default engine logic,

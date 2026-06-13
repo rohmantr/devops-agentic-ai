@@ -1,4 +1,3 @@
-"""Agent database models."""
 
 import enum
 from datetime import datetime, timezone
@@ -25,7 +24,6 @@ class AgentStatus(str, enum.Enum):
 
 
 class Agent(Base):
-    """Database model for Agent."""
 
     __tablename__ = "agents"
 
@@ -49,14 +47,12 @@ class Agent(Base):
         nullable=False,
     )
 
-    # Relationship to execution records
     executions: Mapped[list["AgentExecution"]] = relationship(
         "AgentExecution", back_populates="agent", cascade="all, delete-orphan"
     )
 
 
 class AgentExecution(Base):
-    """Database model for Agent Execution history."""
 
     __tablename__ = "agent_executions"
 
@@ -84,5 +80,4 @@ class AgentExecution(Base):
         nullable=False,
     )
 
-    # Relationship to Agent
     agent: Mapped[Agent] = relationship("Agent", back_populates="executions")

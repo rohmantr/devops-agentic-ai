@@ -1,4 +1,3 @@
-"""Agent CRUD router."""
 
 import uuid
 from typing import Optional
@@ -31,7 +30,6 @@ router = APIRouter(prefix="/api/v1/agents", tags=["agents"])
 
 
 def get_x_tenant_id(x_tenant_id: Optional[str] = Header(None)) -> uuid.UUID:
-    """Dependency to retrieve and validate the X-Tenant-ID header."""
     if not x_tenant_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -52,8 +50,6 @@ async def create_agent(
     db: AsyncSession = Depends(get_db),
     tenant_id: uuid.UUID = Depends(get_x_tenant_id),
 ):
-    """Create a new agent for the tenant."""
-    # Ensure tenant_id from header matches tenant_id in schema
     if agent_in.tenant_id != tenant_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -80,20 +76,16 @@ async def list_agents(
     db: AsyncSession = Depends(get_db),
     tenant_id: uuid.UUID = Depends(get_x_tenant_id),
 ):
-    """List agents for the tenant with pagination."""
-    # Total count query
     count_query = (
         select(func.count()).select_from(Agent).where(Agent.tenant_id == tenant_id)
     )
     total_result = await db.execute(count_query)
     total = total_result.scalar() or 0
 
-    # Pagination query
     query = select(Agent).where(Agent.tenant_id == tenant_id).offset(skip).limit(limit)
     result = await db.execute(query)
     items = result.scalars().all()
 
-    # Convert to list of AgentResponse to satisfy type check or return directly as items
     return AgentListResponse(
         items=[AgentResponse.model_validate(item) for item in items],
         total=total,
@@ -108,7 +100,6 @@ async def get_agent(
     db: AsyncSession = Depends(get_db),
     tenant_id: uuid.UUID = Depends(get_x_tenant_id),
 ):
-    """Retrieve details of a specific agent with tenant isolation."""
     query = select(Agent).where(Agent.id == agent_id)
     result = await db.execute(query)
     db_agent = result.scalar_one_or_none()
@@ -119,7 +110,6 @@ async def get_agent(
             detail=f"Agent with ID {agent_id} not found",
         )
 
-    # Tenant isolation validation
     if db_agent.tenant_id != tenant_id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -136,7 +126,6 @@ async def update_agent(
     db: AsyncSession = Depends(get_db),
     tenant_id: uuid.UUID = Depends(get_x_tenant_id),
 ):
-    """Update an agent with tenant isolation verification."""
     query = select(Agent).where(Agent.id == agent_id)
     result = await db.execute(query)
     db_agent = result.scalar_one_or_none()
@@ -147,7 +136,6 @@ async def update_agent(
             detail=f"Agent with ID {agent_id} not found",
         )
 
-    # Tenant isolation validation
     if db_agent.tenant_id != tenant_id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -170,7 +158,6 @@ async def delete_agent(
     db: AsyncSession = Depends(get_db),
     tenant_id: uuid.UUID = Depends(get_x_tenant_id),
 ):
-    """Delete an agent with tenant isolation verification."""
     query = select(Agent).where(Agent.id == agent_id)
     result = await db.execute(query)
     db_agent = result.scalar_one_or_none()
@@ -181,7 +168,6 @@ async def delete_agent(
             detail=f"Agent with ID {agent_id} not found",
         )
 
-    # Tenant isolation validation
     if db_agent.tenant_id != tenant_id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -201,7 +187,6 @@ async def run_agent_execution(
     agent_type: str,
     max_retries: int,
 ):
-    """Background task to compile and run the LangGraph agent graph, updating DB on completion."""
     from src.models.agent import AgentType
 
     if isinstance(agent_type, str):
@@ -282,7 +267,6 @@ async def execute_agent(
     db: AsyncSession = Depends(get_db),
     tenant_id: uuid.UUID = Depends(get_x_tenant_id),
 ):
-    """Trigger agent execution for a specific task."""
     query = select(Agent).where(Agent.id == agent_id)
     result = await db.execute(query)
     db_agent = result.scalar_one_or_none()

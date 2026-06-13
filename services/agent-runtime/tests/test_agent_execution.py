@@ -1,4 +1,3 @@
-"""Integration and unit tests for Agent Graph and Execution Engine."""
 
 import asyncio
 import uuid
@@ -18,7 +17,6 @@ from src.engine.tools.factory import get_tools_for_agent
 from src.main import app
 from src.models.agent import Agent, AgentExecution, AgentStatus, AgentType
 
-# Test database setup
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
 test_engine = create_async_engine(
@@ -36,7 +34,6 @@ TestSessionLocal = async_sessionmaker(
 
 @pytest_asyncio.fixture(scope="function", autouse=True)
 async def setup_db():
-    """Create all tables in the test database and drop them when done."""
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield
@@ -46,14 +43,12 @@ async def setup_db():
 
 @pytest_asyncio.fixture(scope="function")
 async def db_session():
-    """Dependency override fixture for SQLAlchemy session."""
     async with TestSessionLocal() as session:
         yield session
 
 
 @pytest.fixture(scope="function", autouse=True)
 def override_db_dependency(db_session):
-    """Override get_db and redirect the router's async_session_maker to use TestSessionLocal."""
 
     async def _get_test_db():
         yield db_session
@@ -66,7 +61,6 @@ def override_db_dependency(db_session):
 
 @pytest_asyncio.fixture(scope="function")
 async def client():
-    """Httpx AsyncClient fixture."""
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
@@ -74,12 +68,9 @@ async def client():
 
 @pytest.mark.asyncio
 async def test_graph_compilation_for_all_agent_types():
-    """Verify that the agent graph compiles for all agent types and contains core nodes."""
     for agent_type in AgentType:
         graph = build_agent_graph(agent_type)
         assert graph is not None
-        # Verify basic node presence in the compiled graph structure
-        # LangGraph compiled graphs have nodes dictionary
         assert "plan" in graph.nodes
         assert "execute" in graph.nodes
         assert "review" in graph.nodes
@@ -89,22 +80,18 @@ async def test_graph_compilation_for_all_agent_types():
 
 @pytest.mark.asyncio
 async def test_tool_allowance():
-    """Verify tool selection based on agent type matches the specification."""
-    # CI/CD: git_tool, docker_tool, shell_tool
     ci_cd_tools = get_tools_for_agent(AgentType.CI_CD)
     tool_names = [t.name for t in ci_cd_tools]
     assert "git_tool" in tool_names
     assert "docker_tool" in tool_names
     assert "shell_tool" in tool_names
 
-    # Infra: docker_tool, shell_tool
     infra_tools = get_tools_for_agent(AgentType.INFRA)
     tool_names = [t.name for t in infra_tools]
     assert "docker_tool" in tool_names
     assert "shell_tool" in tool_names
     assert "git_tool" not in tool_names
 
-    # incident/monitoring/log_analysis: shell_tool only
     for atype in [AgentType.INCIDENT, AgentType.MONITORING, AgentType.LOG_ANALYSIS]:
         tools = get_tools_for_agent(atype)
         tool_names = [t.name for t in tools]
@@ -115,11 +102,7 @@ async def test_tool_allowance():
 
 @pytest.mark.asyncio
 async def test_graph_execution_flow():
-    """Unit test simulating plan -> execute -> plan -> review -> approve flow with mock LLM."""
-    # Setup mock LLM
     mock_bound_llm = MagicMock()
-    # First call: return a tool call to invoke shell_tool
-    # Second call: return a final response text
     mock_bound_llm.ainvoke = AsyncMock()
     mock_bound_llm.ainvoke.side_effect = [
         AIMessage(
@@ -138,7 +121,6 @@ async def test_graph_execution_flow():
 
     mock_llm = MagicMock()
     mock_llm.bind_tools.return_value = mock_bound_llm
-    # The review node uses get_llm without bind_tools. It expects APPROVED or RETRY response.
     mock_llm.ainvoke = AsyncMock(return_value=AIMessage(content="APPROVED"))
 
     graph = build_agent_graph(AgentType.CI_CD)
@@ -179,8 +161,6 @@ async def test_graph_execution_flow():
 
 @pytest.mark.asyncio
 async def test_api_trigger_execution_success(client, db_session):
-    """Test POST /api/v1/agents/{agent_id}/execute triggers background execution and updates DB."""
-    # 1. Create an agent in DB
     tenant_id = uuid.uuid4()
     agent = Agent(
         tenant_id=tenant_id,
@@ -194,7 +174,6 @@ async def test_api_trigger_execution_success(client, db_session):
     await db_session.refresh(agent)
     agent_id = agent.id
 
-    # 2. Setup mock LLM for the background execution graph run
     mock_bound_llm = MagicMock()
     mock_bound_llm.ainvoke = AsyncMock(
         return_value=AIMessage(content="All checks passed!")
@@ -203,7 +182,6 @@ async def test_api_trigger_execution_success(client, db_session):
     mock_llm.bind_tools.return_value = mock_bound_llm
     mock_llm.ainvoke = AsyncMock(return_value=AIMessage(content="APPROVED"))
 
-    # 3. Call execution trigger API
     headers = {"X-Tenant-ID": str(tenant_id)}
     payload = {
         "task": "Build the staging artifact",
@@ -223,10 +201,8 @@ async def test_api_trigger_execution_success(client, db_session):
 
         execution_id = uuid.UUID(res_data["execution_id"])
 
-        # 4. Wait/Poll for background task completion
         for _ in range(50):
             await asyncio.sleep(0.05)
-            # Re-fetch from DB
             db_session.expire_all()
             exec_query = select(AgentExecution).where(AgentExecution.id == execution_id)
             exec_res = await db_session.execute(exec_query)
@@ -234,7 +210,6 @@ async def test_api_trigger_execution_success(client, db_session):
             if db_exec and db_exec.status != "running":
                 break
 
-        # 5. Verify the DB execution record was updated correctly
         db_session.expire_all()
         exec_query = select(AgentExecution).where(AgentExecution.id == execution_id)
         exec_res = await db_session.execute(exec_query)
@@ -245,7 +220,6 @@ async def test_api_trigger_execution_success(client, db_session):
         assert len(db_exec.execution_log) > 0
         assert any("Node 'complete'" in log for log in db_exec.execution_log)
 
-        # 6. Verify agent status goes back to IDLE
         db_session.expire_all()
         agent_query = select(Agent).where(Agent.id == agent_id)
         agent_res = await db_session.execute(agent_query)
