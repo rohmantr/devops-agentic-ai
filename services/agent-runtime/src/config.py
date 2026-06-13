@@ -23,7 +23,11 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     openai_model: str = "gpt-4o"
 
-    model_config = {"env_prefix": "AGENT_", "env_file": ".env"}
+    model_config = {
+        "env_prefix": "AGENT_",
+        "env_file": ".env",
+        "extra": "ignore"
+    }
 
 
 settings = Settings()
