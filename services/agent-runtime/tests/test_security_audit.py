@@ -4,6 +4,7 @@ import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.pool import StaticPool
+from sqlalchemy import text
 
 from src.main import app
 from src.db import Base, get_db
@@ -96,6 +97,33 @@ async def test_json_config_injection(client):
     response = await client.post("/api/v1/agents/", json=payload, headers=headers)
     assert response.status_code == 422
     
+@pytest.mark.asyncio
+async def test_sql_injection_probe(client, db_session):
+    # 5. SQL Injection Probe - ensure ORM parameterized query cannot be bypassed
+    tenant_id = str(uuid.uuid4())
+    
+    # Let's create one valid agent
+    valid_payload = {
+        "tenant_id": tenant_id,
+        "name": "Valid Agent",
+        "type": "infra",
+        "status": "idle",
+        "config": {}
+    }
+    await client.post("/api/v1/agents/", json=valid_payload, headers={"X-Tenant-ID": tenant_id})
+    
+    # Try an injection in a UUID field (like Agent ID)
+    injection_id = f"{uuid.uuid4()} OR 1=1--"
+    response = await client.get(f"/api/v1/agents/{injection_id}", headers={"X-Tenant-ID": tenant_id})
+    
+    # FastAPI path parameter mapping to uuid.UUID should catch this and return 422
+    assert response.status_code == 422
+    
+    # Verify the database only has the original agent
+    result = await db_session.execute(text("SELECT COUNT(*) FROM agents"))
+    count = result.scalar()
+    assert count == 1
+
 @pytest.mark.asyncio
 async def test_rate_limit_pagination_safety(client):
     # 6. Rate Limit and Pagination Safety
