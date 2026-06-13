@@ -1,4 +1,3 @@
-"""Tests for health endpoint."""
 
 import pytest
 from httpx import AsyncClient, ASGITransport

@@ -1,4 +1,3 @@
-"""Agent Pydantic schemas."""
 
 from datetime import datetime
 import uuid
@@ -54,3 +53,19 @@ class ErrorDetail(BaseModel):
 
 class HTTPError(BaseModel):
     detail: str | list[ErrorDetail]
+
+
+class AgentExecuteRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    task: str = Field(..., max_length=1000)
+    config: Optional[Dict[str, Any]] = Field(default_factory=dict)
+
+
+class AgentExecuteResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    execution_id: uuid.UUID
+    agent_id: uuid.UUID
+    status: str
+    task: str
+    created_at: datetime

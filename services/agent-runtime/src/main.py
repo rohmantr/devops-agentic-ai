@@ -1,4 +1,3 @@
-"""Agent Runtime Engine — FastAPI application."""
 
 from fastapi import FastAPI
 
