@@ -1,0 +1,8 @@
+FROM python:3.12-slim
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    unzip \
+    && curl -fsSL https://get.pulumi.com | sh \
+    && rm -rf /var/lib/apt/lists/*
+ENV PATH="/root/.pulumi/bin:${PATH}"
+WORKDIR /workspace

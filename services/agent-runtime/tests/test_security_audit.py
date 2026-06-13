@@ -12,6 +12,9 @@ from src.db import Base, get_db
 from src.engine.graph import build_agent_graph
 from src.engine.tools.factory import get_tools_for_agent
 from src.engine.tools.shell import shell_tool
+from src.engine.tools.git import git_tool
+from src.engine.tools.docker import docker_tool
+from src.engine.sandbox import SandboxManager
 from src.main import app
 from src.models.agent import AgentType
 
@@ -140,8 +143,8 @@ async def test_rate_limit_pagination_safety(client):
 async def test_shell_tool_arbitrary_execution():
     payload_command = "echo 'vulnerable' && whoami"
     result = shell_tool.invoke({"command": payload_command})
-    assert "vulnerable" in result
-    assert "exit_code: 0" in result
+    assert "Failed to run fallback: Shell injection detected" in result
+    assert "exit_code: -1" in result
 
 
 @pytest.mark.asyncio
@@ -154,11 +157,11 @@ async def test_least_privilege_tool_isolation_per_agent():
 
     graph = build_agent_graph(AgentType.MONITORING)
     execute_node = graph.nodes["execute"]
-    
+
     allowed_tools = []
     if hasattr(execute_node, "bound") and hasattr(execute_node.bound, "tools_by_name"):
         allowed_tools = list(execute_node.bound.tools_by_name.keys())
-    
+
     assert "shell_tool" in allowed_tools
     assert "docker_tool" not in allowed_tools
     assert "git_tool" not in allowed_tools
@@ -172,11 +175,13 @@ async def test_asynchronous_execution_tenant_isolation_risk(client):
         "name": "Agent Tenant A",
         "type": "monitoring",
         "status": "idle",
-        "config": {}
+        "config": {},
     }
-    resp_a = await client.post("/api/v1/agents/", json=agent_payload_a, headers={"X-Tenant-ID": str(tenant_a)})
+    resp_a = await client.post(
+        "/api/v1/agents/", json=agent_payload_a, headers={"X-Tenant-ID": str(tenant_a)}
+    )
     assert resp_a.status_code == 201
-    
+
     sensitive_file = "dev.db"
     command = f"ls {sensitive_file}"
     result = shell_tool.invoke({"command": command})
@@ -186,7 +191,45 @@ async def test_asynchronous_execution_tenant_isolation_risk(client):
 @pytest.mark.asyncio
 async def test_secrets_leakage_logging():
     import os
+
     with patch.dict(os.environ, {"SECRET_KEY": "super_secret_value"}):
         result = shell_tool.invoke({"command": "echo $SECRET_KEY"})
         assert "super_secret_value" in result
 
+
+@pytest.mark.asyncio
+async def test_sandbox_shell_injection_vulnerability():
+    manager = SandboxManager()
+    manager.use_fallback = True
+
+    result = await manager.run_in_sandbox(
+        "monitoring", "echo 'hello' && echo 'injected'"
+    )
+    assert result["exit_code"] == -1
+    assert "Failed to run fallback: Shell injection detected" in result["output"]
+
+
+@pytest.mark.asyncio
+async def test_docker_tool_command_injection():
+    manager = SandboxManager()
+    manager.use_fallback = True
+
+    payload_action = "run; echo 'injected'"
+    with pytest.raises(ValueError):
+        await docker_tool.ainvoke({"action": payload_action, "image": "ubuntu"})
+
+
+@pytest.mark.asyncio
+async def test_git_tool_command_injection():
+    manager = SandboxManager()
+    manager.use_fallback = True
+
+    payload_branch = "; echo 'git_injected'"
+    with pytest.raises(ValueError):
+        await git_tool.ainvoke(
+            {
+                "action": "clone",
+                "repo_url": "https://github.com/example/repo.git",
+                "branch": payload_branch,
+            }
+        )
