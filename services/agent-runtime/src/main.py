@@ -1,12 +1,9 @@
 from fastapi import FastAPI
-
 from src.config import settings
-from src.routers.agents import router as agents_router
+from src.routers import agents
 
 app = FastAPI(title=settings.app_name, version=settings.app_version)
-
-app.include_router(agents_router)
-
+app.include_router(agents.router)
 
 @app.get("/health")
 async def health():
