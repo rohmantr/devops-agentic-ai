@@ -1,5 +1,3 @@
-"""Agent Runtime Engine — FastAPI application."""
-
 from fastapi import FastAPI
 from src.config import settings
 from src.routers import agents
