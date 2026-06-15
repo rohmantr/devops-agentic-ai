@@ -1,0 +1,3 @@
+name: postgres-stack
+runtime: nodejs
+description: Pulumi TypeScript stack for PostgreSQL deployment (RDS or local Docker)

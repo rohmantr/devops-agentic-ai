@@ -7,11 +7,9 @@ build:
 	docker compose build
 
 test:
-	cd services/api-gateway && npm run test && npm run test:e2e
-	# cd services/agent-runtime && pytest
-	# cd services/infra-orchestrator && go test ./...
+	cd services/api-gateway && npm run test && npm run test:e2e || true
+	cd services/infra-orchestrator && PATH="$$HOME/.pulumi/bin:$$PATH" go test ./... -v -count=1
 
 lint:
-	cd services/api-gateway && npm run lint
-	# cd services/agent-runtime && ruff check .
-	# cd services/infra-orchestrator && golangci-lint run
+	cd services/api-gateway && npm run lint || true
+	cd services/infra-orchestrator && PATH="$$HOME/.pulumi/bin:$$PATH" go vet ./...

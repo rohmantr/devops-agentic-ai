@@ -1,0 +1,8 @@
+node_modules/
+bin/
+*.js.map
+*.d.ts
+*.d.ts.map
+.env
+.env.local
+Pulumi.*.yaml
