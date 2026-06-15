@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     nats_url: str = "nats://localhost:4222"
 
     database_url: str = (
-        "postgresql+asyncpg://devops_ai:localdev123@localhost:5432/devops_agentic"
+        "postgresql+asyncpg://devops_ai:pulumi_local_dev_pass_2026@localhost:5432/devops_agentic"
     )
 
     redis_url: str = "redis://localhost:6379/0"

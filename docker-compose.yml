@@ -3,7 +3,7 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: devops_ai
-      POSTGRES_PASSWORD: localdev123
+      POSTGRES_PASSWORD: pulumi_local_dev_pass_2026
       POSTGRES_DB: devops_agentic
     ports: ["5432:5432"]
     volumes: ["pgdata:/var/lib/postgresql/data"]
